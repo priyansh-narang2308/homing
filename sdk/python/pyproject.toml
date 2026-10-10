@@ -1,0 +1,16 @@
+[project]
+name = "homing"
+version = "0.1.0"
+description = "Python client for the Homing email API"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+dependencies = ["typing_extensions>=4.0; python_version < '3.11'"]
+
+[project.urls]
+Homepage = "https://homing.dev"
+Source = "https://github.com/priyansh-narang2308/homing/tree/main/sdk/python"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
