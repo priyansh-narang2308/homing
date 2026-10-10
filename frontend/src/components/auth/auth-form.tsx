@@ -32,7 +32,8 @@ export function AuthForm() {
       type="button"
       onClick={onGoogle}
       disabled={pending}
-      className="glass inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-5 font-semibold text-cf-fg-strong transition hover:border-cf-fg/15 disabled:cursor-not-allowed disabled:text-cf-fg-strong/50"
+      className="glass inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-5 font-semibold text-cf-fg-strong transition hover:border-cf-fg/15 disabled:cursor-not-allowed disabled:text-cf-fg-strong/50 cursor-pointer
+      "
     >
       {pending ? <Loader2 className="size-5 animate-spin" /> : <GoogleIcon />}
       Continue with Google
