@@ -1,0 +1,15 @@
+services:
+  redis:
+    image: redis:8-alpine
+    container_name: homing-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: homing-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped

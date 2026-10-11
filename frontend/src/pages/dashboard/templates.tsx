@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from "react";
 import {
   Code2,
   Edit2,
@@ -7,12 +7,11 @@ import {
   LayoutTemplate,
   Loader2,
   Plus,
-  Sparkles,
   Trash2,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+} from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,26 +19,33 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CodeBlock } from '@/components/dashboard/code-block'
-import { CopyButton } from '@/components/dashboard/copy-button'
-import { TemplateEditorDialog } from '@/components/dashboard/template-editor-dialog'
-import { TemplatePreviewDialog } from '@/components/dashboard/template-preview-dialog'
-import { useDeleteTemplate, useTemplates } from '@/hooks/use-api'
-import { formatDateTime, timeAgo } from '@/lib/time'
-import type { EmailTemplate } from '@/lib/types'
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { CodeBlock } from "@/components/dashboard/code-block";
+import { CopyButton } from "@/components/dashboard/copy-button";
+import { TemplateEditorDialog } from "@/components/dashboard/template-editor-dialog";
+import { TemplatePreviewDialog } from "@/components/dashboard/template-preview-dialog";
+import { useDeleteTemplate, useTemplates } from "@/hooks/use-api";
+import { formatDateTime, timeAgo } from "@/lib/time";
+import type { EmailTemplate } from "@/lib/types";
 
-const VAR_REGEX = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g
+const VAR_REGEX = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g;
 
 function extractVars(text: string): string[] {
-  const matches = text.matchAll(VAR_REGEX)
-  const set = new Set<string>()
+  const matches = text.matchAll(VAR_REGEX);
+  const set = new Set<string>();
   for (const m of matches) {
-    if (m[1]) set.add(m[1].trim())
+    if (m[1]) set.add(m[1].trim());
   }
-  return Array.from(set)
+  return Array.from(set);
 }
 
 const SDK_EXAMPLE = `// Send templated email in Go using the Homing SDK
@@ -52,35 +58,41 @@ ids, err := client.Send(ctx, homing.EmailInput{
         "name":      "Alex",
         "login_url": "https://myapp.com/login",
     },
-})`
+})`;
 
 export function TemplatesPage() {
-  const { data: templates, isPending, isError, error } = useTemplates()
-  const deleteTemplate = useDeleteTemplate()
+  const { data: templates, isPending, isError, error } = useTemplates();
+  const deleteTemplate = useDeleteTemplate();
 
-  const [editorOpen, setEditorOpen] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null)
-  const [toDelete, setToDelete] = useState<EmailTemplate | null>(null)
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(
+    null,
+  );
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(
+    null,
+  );
+  const [toDelete, setToDelete] = useState<EmailTemplate | null>(null);
 
   function openCreate() {
-    setEditingTemplate(null)
-    setEditorOpen(true)
+    setEditingTemplate(null);
+    setEditorOpen(true);
   }
 
   function openEdit(tmpl: EmailTemplate) {
-    setEditingTemplate(tmpl)
-    setEditorOpen(true)
+    setEditingTemplate(tmpl);
+    setEditorOpen(true);
   }
 
   async function confirmDelete() {
-    if (!toDelete) return
+    if (!toDelete) return;
     try {
-      await deleteTemplate.mutateAsync(toDelete.id)
-      toast.success(`Deleted template "${toDelete.name}"`)
-      setToDelete(null)
+      await deleteTemplate.mutateAsync(toDelete.id);
+      toast.success(`Deleted template "${toDelete.name}"`);
+      setToDelete(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete template')
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete template",
+      );
     }
   }
 
@@ -88,17 +100,22 @@ export function TemplatesPage() {
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] font-medium tracking-[-0.72px] text-cf-fg-strong">Email Templates</h1>
+          <h1 className="text-[28px] font-medium tracking-[-0.72px] text-cf-fg-strong">
+            Email Templates
+          </h1>
           <p className="mt-1 text-sm text-cf-fg-muted">
-            Design reusable dynamic email templates with variable substitution and live inbox preview.
+            Design reusable dynamic email templates with variable substitution
+            and live inbox preview.
           </p>
         </div>
-        <Button onClick={openCreate} className="h-9 rounded-full px-4">
+        <Button
+          onClick={openCreate}
+          className="h-9 cursor-pointer rounded-full px-4"
+        >
           <Plus /> New template
         </Button>
       </div>
 
-      {/* Templates Table */}
       <div className="overflow-hidden rounded-xl border border-cf-border">
         <Table>
           <TableHeader>
@@ -122,15 +139,25 @@ export function TemplatesPage() {
 
             {!isPending && (templates?.length ?? 0) === 0 && (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="py-16 text-center text-sm text-cf-fg-muted">
+                <TableCell
+                  colSpan={6}
+                  className="py-16 text-center text-sm text-cf-fg-muted"
+                >
                   {isError ? (
                     error.message
                   ) : (
                     <div className="flex flex-col items-center gap-3">
                       <LayoutTemplate className="size-8 text-cf-fg-muted/60" />
-                      <div>No templates found. Create one or load a starter preset to get started.</div>
-                      <Button onClick={openCreate} size="sm" className="mt-2 rounded-full">
-                        <Sparkles className="size-3.5 mr-1" /> Create First Template
+                      <div>
+                        No templates found. Create one or load a starter preset
+                        to get started.
+                      </div>
+                      <Button
+                        onClick={openCreate}
+                        size="sm"
+                        className="mt-2 rounded-full cursor-pointer"
+                      >
+                        Create First Template
                       </Button>
                     </div>
                   )}
@@ -139,7 +166,7 @@ export function TemplatesPage() {
             )}
 
             {templates?.map((tmpl) => {
-              const vars = extractVars(tmpl.subject + ' ' + tmpl.html_content)
+              const vars = extractVars(tmpl.subject + " " + tmpl.html_content);
 
               return (
                 <TableRow key={tmpl.id}>
@@ -177,21 +204,32 @@ export function TemplatesPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1 max-w-[180px]">
                       {vars.length === 0 ? (
-                        <span className="text-[11px] text-cf-fg-muted">None</span>
+                        <span className="text-[11px] text-cf-fg-muted">
+                          None
+                        </span>
                       ) : (
                         vars.slice(0, 3).map((v) => (
-                          <Badge key={v} variant="outline" className="text-[10px] font-mono px-1.5 py-0 text-cf-fg-muted">
+                          <Badge
+                            key={v}
+                            variant="outline"
+                            className="text-[10px] font-mono px-1.5 py-0 text-cf-fg-muted"
+                          >
                             {`{{${v}}}`}
                           </Badge>
                         ))
                       )}
                       {vars.length > 3 && (
-                        <span className="text-[10px] text-cf-fg-muted self-center">+{vars.length - 3}</span>
+                        <span className="text-[10px] text-cf-fg-muted self-center">
+                          +{vars.length - 3}
+                        </span>
                       )}
                     </div>
                   </TableCell>
 
-                  <TableCell className="text-cf-fg-muted text-xs" title={formatDateTime(tmpl.created_at)}>
+                  <TableCell
+                    className="text-cf-fg-muted text-xs"
+                    title={formatDateTime(tmpl.created_at)}
+                  >
                     {timeAgo(tmpl.created_at)}
                   </TableCell>
 
@@ -229,7 +267,7 @@ export function TemplatesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
           </TableBody>
         </Table>
@@ -239,10 +277,16 @@ export function TemplatesPage() {
       <div className="rounded-xl border border-cf-border bg-cf-bg-raised p-6">
         <div className="flex items-center gap-2">
           <Code2 className="size-4 text-cf-accent" />
-          <h3 className="text-sm font-semibold text-cf-fg-strong">Sending by Template Slug</h3>
+          <h3 className="text-sm font-semibold text-cf-fg-strong">
+            Sending by Template Slug
+          </h3>
         </div>
         <p className="mt-1 text-xs text-cf-fg-muted">
-          Pass your template's slug and key-value variables to the API or SDK. Placeholders like <code className="font-mono text-cf-fg">{'{{name}}'}</code> are automatically rendered on our distributed queue workers before dispatch.
+          Pass your template's slug and key-value variables to the API or SDK.
+          Placeholders like{" "}
+          <code className="font-mono text-cf-fg">{"{{name}}"}</code> are
+          automatically rendered on our distributed queue workers before
+          dispatch.
         </p>
 
         <div className="mt-4 overflow-hidden rounded-lg border border-cf-border bg-cf-bg">
@@ -264,13 +308,18 @@ export function TemplatesPage() {
       />
 
       {/* Delete Confirmation */}
-      <Dialog open={Boolean(toDelete)} onOpenChange={(open) => !open && setToDelete(null)}>
+      <Dialog
+        open={Boolean(toDelete)}
+        onOpenChange={(open) => !open && setToDelete(null)}
+      >
         <DialogContent className="border border-cf-border bg-cf-bg-raised sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete email template</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <code className="font-mono text-xs">{toDelete?.name}</code> ({toDelete?.slug})?
-              Any API calls referencing this slug will fail unless updated.
+              Are you sure you want to delete{" "}
+              <code className="font-mono text-xs">{toDelete?.name}</code> (
+              {toDelete?.slug})? Any API calls referencing this slug will fail
+              unless updated.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -282,11 +331,15 @@ export function TemplatesPage() {
               disabled={deleteTemplate.isPending}
               onClick={confirmDelete}
             >
-              {deleteTemplate.isPending ? <Loader2 className="animate-spin" /> : 'Delete Template'}
+              {deleteTemplate.isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Delete Template"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

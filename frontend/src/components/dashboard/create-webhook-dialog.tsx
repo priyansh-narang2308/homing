@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Globe, Loader2, Sparkles } from "lucide-react";
+import { Globe, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -145,7 +145,6 @@ export function CreateWebhookDialog({
               <div className="flex flex-col gap-2 rounded-lg border border-cf-border bg-cf-bg p-3">
                 <label className="flex cursor-pointer items-center justify-between text-xs">
                   <span className="flex items-center gap-2 font-medium text-cf-fg-strong">
-                    <Sparkles className="size-3.5 text-cf-accent" />
                     All Events (*)
                   </span>
                   <input
@@ -191,11 +190,16 @@ export function CreateWebhookDialog({
             <Button
               type="button"
               variant="outline"
+              className="cursor-pointer"
               onClick={() => close(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createWebhook.isPending}>
+            <Button
+              className="cursor-pointer"
+              type="submit"
+              disabled={createWebhook.isPending}
+            >
               {createWebhook.isPending ? (
                 <Loader2 className="animate-spin" />
               ) : (

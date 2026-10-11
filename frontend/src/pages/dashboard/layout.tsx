@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
 import {
   ChevronsUpDown,
@@ -40,6 +41,7 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const user = session?.user;
   const initial = (user?.name || user?.email || "?").charAt(0).toUpperCase();
+  const [imageError, setImageError] = useState(false);
 
   async function onSignOut() {
     await signOut();
@@ -49,32 +51,18 @@ export function DashboardLayout() {
   return (
     <div className="flex min-h-dvh bg-cf-bg">
       <aside className="sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r border-cf-border px-3 py-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left outline-none transition-colors hover:bg-accent">
-            {user?.image ? (
-              <img src={user.image} alt="" className="size-7 rounded-md" />
-            ) : (
-              <span className="grid size-7 place-items-center rounded-md bg-cf-accent text-sm font-semibold text-cf-fg-strong">
-                {initial}
-              </span>
-            )}
-            <span className="flex-1 truncate text-sm font-medium text-cf-fg-strong">
-              {user?.name || user?.email}
-            </span>
-            <ChevronsUpDown className="size-4 text-cf-fg-muted" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel className="truncate font-normal text-cf-fg-muted">
-              {user?.email}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onSignOut}>
-              <LogOut /> Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Brand Logo at the top */}
+        <div className="mb-6 px-2">
+          <NavLink
+            to="/"
+            className="inline-flex items-center transition-opacity hover:opacity-90"
+          >
+            <Logo />
+          </NavLink>
+        </div>
 
-        <nav className="mt-6 flex flex-col gap-0.5">
+        {/* Navigation */}
+        <nav className="flex flex-col gap-0.5">
           {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -94,23 +82,57 @@ export function DashboardLayout() {
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-3 px-2">
+        {/* Bottom Section: Mailpit + User Account */}
+        <div className="mt-auto flex flex-col gap-2">
           {import.meta.env.DEV && (
-            <a
-              href={MAILPIT_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 text-xs text-cf-fg-muted transition-colors hover:text-cf-fg-strong"
-            >
-              <ExternalLink className="size-3.5" /> Mailpit inbox
-            </a>
+            <div className="px-2 pb-1">
+              <a
+                href={MAILPIT_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-xs text-cf-fg-muted transition-colors hover:text-cf-fg-strong"
+              >
+                <ExternalLink className="size-3.5" /> Mailpit inbox
+              </a>
+            </div>
           )}
-          <NavLink
-            to="/"
-            className="opacity-80 transition-opacity hover:opacity-100"
-          >
-            <Logo className="[&_span]:text-sm" />
-          </NavLink>
+
+          {/* User profile dropdown - opens to the right */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex cursor-pointer w-full items-center gap-2.5 rounded-lg border border-cf-border/40 px-2 py-1.5 text-left outline-none transition-colors hover:bg-accent hover:border-cf-border">
+              {user?.image && !imageError ? (
+                <img
+                  src={user.image}
+                  alt={user?.name || user?.email || "Avatar"}
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageError(true)}
+                  className="size-7 rounded-md object-cover"
+                />
+              ) : (
+                <span className="grid size-7 place-items-center rounded-md bg-cf-accent text-sm font-semibold text-cf-fg-strong">
+                  {initial}
+                </span>
+              )}
+              <span className="flex-1 truncate text-sm font-medium text-cf-fg-strong">
+                {user?.name || user?.email}
+              </span>
+              <ChevronsUpDown className="size-4 text-cf-fg-muted" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="right"
+              align="end"
+              sideOffset={12}
+              className="w-56"
+            >
+              <DropdownMenuLabel className="truncate font-normal text-cf-fg-muted">
+                {user?.email}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onSignOut} className="cursor-pointer">
+                <LogOut /> Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 

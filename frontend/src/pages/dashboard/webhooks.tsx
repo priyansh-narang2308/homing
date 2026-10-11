@@ -182,7 +182,7 @@ export function WebhooksPage() {
         </div>
         <Button
           onClick={() => setCreateOpen(true)}
-          className="h-9 rounded-full px-4"
+          className="h-9 rounded-full px-4 cursor-pointer"
         >
           <Plus /> Add endpoint
         </Button>
