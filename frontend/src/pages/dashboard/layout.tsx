@@ -97,7 +97,7 @@ export function DashboardLayout() {
             </div>
           )}
 
-          {/* User profile dropdown - opens to the right */}
+          {/* User profile dropdown - at the bottom, opens to the right */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex cursor-pointer w-full items-center gap-2.5 rounded-lg border border-cf-border/40 px-2 py-1.5 text-left outline-none transition-colors hover:bg-accent hover:border-cf-border">
               {user?.image && !imageError ? (

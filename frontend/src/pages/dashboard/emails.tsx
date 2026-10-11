@@ -65,7 +65,9 @@ function Detail({
   return (
     <div className="grid grid-cols-[110px_1fr] gap-3 py-2 text-sm">
       <span className="text-cf-fg-muted">{label}</span>
-      <span className="min-w-0 break-words text-cf-fg-strong">{children}</span>
+      <span className="min-w-0 wrap-break-word text-cf-fg-strong">
+        {children}
+      </span>
     </div>
   );
 }
@@ -257,7 +259,10 @@ export function EmailsPage() {
       <div className="mt-8 flex items-center gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-9 min-w-44 justify-between">
+            <Button
+              variant="outline"
+              className="h-9 min-w-44 justify-between cursor-pointer"
+            >
               {statuses.find((s) => s.value === status)?.label}
               <ChevronDown className="text-cf-fg-muted" />
             </Button>
@@ -268,7 +273,11 @@ export function EmailsPage() {
               onValueChange={(v) => setStatus(v as EmailStatus | "all")}
             >
               {statuses.map((s) => (
-                <DropdownMenuRadioItem key={s.value} value={s.value}>
+                <DropdownMenuRadioItem
+                  className="cursor-pointer"
+                  key={s.value}
+                  value={s.value}
+                >
                   {s.label}
                 </DropdownMenuRadioItem>
               ))}
