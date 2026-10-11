@@ -59,7 +59,7 @@ func (h *Handler) ListEmails(c *echo.Context) error {
 
 	if s := model.EmailStatus(c.QueryParam("status")); s != "" {
 		switch s {
-		case model.StatusQueued, model.StatusSending, model.StatusSent, model.StatusFailed:
+		case model.StatusQueued, model.StatusSending, model.StatusSent, model.StatusFailed, model.StatusDLQ:
 			q = q.Where("status = ?", s)
 		default:
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid status")
@@ -101,7 +101,7 @@ func (h *Handler) SendTestEmail(c *echo.Context) error {
 		Subject: "Hello World",
 		HTML:    "<p>Congrats on sending your <strong>first email</strong>!</p>",
 		Text:    "Congrats on sending your first email!",
-	}})
+	}}, "")
 	if err != nil {
 		return err
 	}

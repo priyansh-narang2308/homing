@@ -13,18 +13,21 @@ const (
 	StatusSending EmailStatus = "sending"
 	StatusSent    EmailStatus = "sent"
 	StatusFailed  EmailStatus = "failed"
+	StatusDLQ     EmailStatus = "dlq"
 )
 
 type Email struct {
 	Base
-	UserID    uuid.UUID   `gorm:"type:uuid" json:"-"`
-	From      string      `gorm:"column:from_address" json:"from"`
-	To        string      `gorm:"column:to_address" json:"to"`
-	Subject   string      `json:"subject"`
-	HTML      string      `json:"html,omitempty"`
-	Text      string      `json:"text,omitempty"`
-	Status    EmailStatus `json:"status"`
-	Attempts  int         `json:"attempts"`
-	LastError string      `json:"last_error,omitempty"`
-	SentAt    *time.Time  `json:"sent_at,omitempty"`
+	UserID         uuid.UUID    `gorm:"type:uuid" json:"-"`
+	From           string       `gorm:"column:from_address" json:"from"`
+	To             string       `gorm:"column:to_address" json:"to"`
+	Subject        string       `json:"subject"`
+	HTML           string       `json:"html,omitempty"`
+	Text           string       `json:"text,omitempty"`
+	Status         EmailStatus  `json:"status"`
+	Attempts       int          `json:"attempts"`
+	LastError      string       `json:"last_error,omitempty"`
+	SentAt         *time.Time   `json:"sent_at,omitempty"`
+	IdempotencyKey *string      `gorm:"column:idempotency_key" json:"idempotency_key,omitempty"`
+	Events         []EmailEvent `gorm:"foreignKey:EmailID;references:ID" json:"events,omitempty"`
 }

@@ -61,3 +61,38 @@ export function useSendTestEmail() {
     },
   })
 }
+
+export function useEmailEvents(emailId: string | null) {
+  return useQuery({
+    queryKey: ['email-events', emailId],
+    queryFn: () =>
+      api<{ data: import('@/lib/types').EmailEvent[] }>(`/dashboard/emails/${emailId}/events`).then(
+        (r) => r.data,
+      ),
+    enabled: Boolean(emailId),
+    refetchInterval: (query) => {
+      // If events show it's still queued or sending, poll every 2s
+      const events = query.state.data
+      const last = events?.[events.length - 1]
+      if (last && (last.event_type === 'queued' || last.event_type === 'claimed' || last.event_type === 'retry_scheduled')) {
+        return 2_000
+      }
+      return false
+    },
+  })
+}
+
+export function useRetryEmail() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<{ data: { id: string; status: string } }>(`/dashboard/emails/${id}/retry`, {
+        method: 'POST',
+      }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['emails'] })
+      qc.invalidateQueries({ queryKey: ['email-events', id] })
+    },
+  })
+}
+

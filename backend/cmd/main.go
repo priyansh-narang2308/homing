@@ -185,12 +185,15 @@ func runAPI(ctx context.Context, k *koanf.Koanf, db *gorm.DB, rdb *redis.Client)
 	// SDK / REST API, authenticated with an API key.
 	e.POST("/email", h.SendEmails, requireAPIKey)
 	e.GET("/email/:id", h.GetEmail, requireAPIKey)
+	e.POST("/email/:id/retry", h.RetryEmail, requireAPIKey)
 
 	// Dashboard, authenticated with the user's Neon Auth JWT.
 	d := e.Group("/dashboard", middleware.RequireUser(verifier))
 	d.GET("/me", h.Me)
 	d.GET("/usage", h.Usage)
 	d.GET("/emails", h.ListEmails)
+	d.GET("/emails/:id/events", h.GetEmailEvents)
+	d.POST("/emails/:id/retry", h.RetryEmail)
 	d.POST("/test-email", h.SendTestEmail)
 	d.GET("/api-keys", h.ListAPIKeys)
 	d.POST("/api-keys", h.CreateAPIKey)

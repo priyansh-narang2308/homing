@@ -168,9 +168,12 @@ func (w *Worker) handle(msg redis.XMessage) {
 		return
 	}
 
+	w.logEvent(ctx, id, model.EventClaimed, email.Attempts, fmt.Sprintf("Claimed by worker %s (attempt %d)", w.consumer, email.Attempts))
+
 	// A worker crashed during the final attempt; don't send again.
 	if email.Attempts > w.cfg.MaxAttempts {
-		w.finish(ctx, log, msg.ID, id, model.StatusFailed, "max attempts reached")
+		w.logEvent(ctx, id, model.EventDLQMoved, email.Attempts, "Worker crashed on final attempt; moved to Dead-Letter Queue")
+		w.finish(ctx, log, msg.ID, id, model.StatusDLQ, "max attempts reached")
 		return
 	}
 
@@ -185,12 +188,19 @@ func (w *Worker) handle(msg redis.XMessage) {
 
 	switch {
 	case sendErr == nil:
+		w.logEvent(ctx, id, model.EventSent, email.Attempts, "250 2.0.0 OK: Accepted by mail server via SMTP/SES")
 		w.finish(ctx, log, msg.ID, id, model.StatusSent, "")
 		log.Info().Str("to", email.To).Int("attempt", email.Attempts).Msg("email sent")
-	case mailer.IsPermanent(sendErr) || email.Attempts >= w.cfg.MaxAttempts:
+	case mailer.IsPermanent(sendErr):
+		w.logEvent(ctx, id, model.EventFailed, email.Attempts, fmt.Sprintf("Permanent rejection: %s", sendErr.Error()))
 		w.finish(ctx, log, msg.ID, id, model.StatusFailed, sendErr.Error())
-		log.Error().Err(sendErr).Int("attempt", email.Attempts).Msg("email failed")
+		log.Error().Err(sendErr).Int("attempt", email.Attempts).Msg("email permanently failed")
+	case email.Attempts >= w.cfg.MaxAttempts:
+		w.logEvent(ctx, id, model.EventDLQMoved, email.Attempts, fmt.Sprintf("Moved to Dead-Letter Queue (DLQ) after %d attempts: %s", email.Attempts, sendErr.Error()))
+		w.finish(ctx, log, msg.ID, id, model.StatusDLQ, fmt.Sprintf("Max attempts reached: %s", sendErr.Error()))
+		log.Warn().Err(sendErr).Int("attempt", email.Attempts).Msg("email moved to Dead-Letter Queue")
 	default:
+		w.logEvent(ctx, id, model.EventRetryScheduled, email.Attempts, fmt.Sprintf("Temporary SMTP failure: %s (will retry in %s)", sendErr.Error(), w.cfg.RetryAfter))
 		// Leave the stream entry unacknowledged; it is redelivered after RetryAfter.
 		err := w.db.WithContext(ctx).Model(&model.Email{}).Where("id = ?", id).Updates(map[string]any{
 			"status":     model.StatusQueued,
@@ -202,6 +212,23 @@ func (w *Worker) handle(msg redis.XMessage) {
 		}
 		log.Warn().Err(sendErr).Int("attempt", email.Attempts).Dur("retry_after", w.cfg.RetryAfter).Msg("temporary failure, will retry")
 	}
+}
+
+// logEvent appends an audit event to email_events.
+func (w *Worker) logEvent(ctx context.Context, emailID uuid.UUID, eventType model.EmailEventType, attempt int, details string) {
+	eventID, err := uuid.NewV7()
+	if err != nil {
+		return
+	}
+	event := model.EmailEvent{
+		Base:      model.Base{ID: eventID},
+		EmailID:   emailID,
+		EventType: eventType,
+		Attempt:   attempt,
+		WorkerID:  w.consumer,
+		Details:   details,
+	}
+	_ = w.db.WithContext(ctx).Create(&event).Error
 }
 
 // claim moves the email to "sending" and bumps its attempt count. It only succeeds if the
@@ -235,7 +262,7 @@ func (w *Worker) handleUnclaimed(ctx context.Context, log zerolog.Logger, msgID 
 		w.ack(log, msgID)
 	case err != nil:
 		log.Error().Err(err).Msg("failed to load email status")
-	case email.Status == model.StatusSent || email.Status == model.StatusFailed:
+	case email.Status == model.StatusSent || email.Status == model.StatusFailed || email.Status == model.StatusDLQ:
 		w.ack(log, msgID)
 	default:
 		log.Debug().Str("status", string(email.Status)).Msg("email is being handled elsewhere")

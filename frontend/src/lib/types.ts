@@ -1,4 +1,24 @@
-export type EmailStatus = 'queued' | 'sending' | 'sent' | 'failed'
+export type EmailStatus = 'queued' | 'sending' | 'sent' | 'failed' | 'dlq'
+
+export type EmailEventType =
+  | 'queued'
+  | 'claimed'
+  | 'sent'
+  | 'retry_scheduled'
+  | 'failed'
+  | 'dlq_moved'
+  | 'replayed'
+
+export interface EmailEvent {
+  id: string
+  email_id: string
+  event_type: EmailEventType
+  attempt: number
+  worker_id: string
+  details: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
 
 export interface Email {
   id: string
@@ -9,6 +29,8 @@ export interface Email {
   attempts: number
   last_error?: string
   sent_at?: string
+  idempotency_key?: string
+  events?: EmailEvent[]
   created_at: string
   updated_at: string
 }
