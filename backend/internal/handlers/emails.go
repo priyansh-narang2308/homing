@@ -14,16 +14,19 @@ import (
 	"github.com/priyansh-narang2308/homing/backend/internal/middleware"
 	"github.com/priyansh-narang2308/homing/backend/internal/model"
 	"github.com/priyansh-narang2308/homing/backend/internal/queue"
+	"github.com/priyansh-narang2308/homing/backend/internal/template"
 )
 
 const maxEmailsPerRequest = 100
 
 type EmailInput struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Subject string `json:"subject"`
-	HTML    string `json:"html"`
-	Text    string `json:"text"`
+	From         string         `json:"from"`
+	To           string         `json:"to"`
+	Subject      string         `json:"subject"`
+	HTML         string         `json:"html"`
+	Text         string         `json:"text"`
+	TemplateSlug string         `json:"template_slug,omitempty"`
+	Variables    map[string]any `json:"variables,omitempty"`
 }
 
 type sendEmailsRequest struct {
@@ -199,6 +202,18 @@ func (h *Handler) queueEmails(ctx context.Context, userID uuid.UUID, inputs []Em
 	events := make([]model.EmailEvent, len(inputs))
 
 	for i, in := range inputs {
+		if in.TemplateSlug != "" {
+			var tmpl model.Template
+			if err := h.DB.WithContext(ctx).Where("user_id = ? AND slug = ?", userID, in.TemplateSlug).Take(&tmpl).Error; err == nil {
+				if in.Subject == "" {
+					in.Subject = template.Render(tmpl.Subject, in.Variables)
+				}
+				if in.HTML == "" {
+					in.HTML = template.Render(tmpl.HTMLContent, in.Variables)
+				}
+			}
+		}
+
 		id, err := uuid.NewV7()
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Failed to generate email id")

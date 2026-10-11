@@ -4,6 +4,7 @@ import {
   ExternalLink,
   Gauge,
   KeyRound,
+  LayoutTemplate,
   LogOut,
   Mail,
   Rocket,
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/dashboard", label: "Get started", icon: Rocket },
   { to: "/emails", label: "Emails", icon: Mail },
+  { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/webhooks", label: "Webhooks", icon: Webhook },
   { to: "/api-keys", label: "API keys", icon: KeyRound },
   { to: "/usage", label: "Usage", icon: Gauge },

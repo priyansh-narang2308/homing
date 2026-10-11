@@ -207,6 +207,15 @@ func runAPI(ctx context.Context, k *koanf.Koanf, db *gorm.DB, rdb *redis.Client)
 	d.GET("/webhooks/:id/deliveries", h.ListWebhookDeliveries)
 	d.POST("/webhooks/deliveries/:id/replay", h.ReplayWebhookDelivery)
 
+	// Templates
+	d.GET("/templates", h.ListTemplates)
+	d.POST("/templates", h.CreateTemplate)
+	d.GET("/templates/:id", h.GetTemplate)
+	d.PUT("/templates/:id", h.UpdateTemplate)
+	d.DELETE("/templates/:id", h.DeleteTemplate)
+	d.POST("/templates/:id/preview", h.PreviewTemplate)
+	d.POST("/templates/:id/test-send", h.TestSendTemplate)
+
 	addr := ":" + k.String("PORT")
 	log.Info().Str("addr", addr).Msg("starting API server")
 	return echo.StartConfig{Address: addr, HideBanner: true, HidePort: true}.Start(ctx, e)

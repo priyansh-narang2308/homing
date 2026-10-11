@@ -9,7 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-type Options = { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown }
+type Options = { method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown }
 
 // Calls the Go API through the dev-server proxy at /api with the user's Neon Auth JWT.
 export async function api<T>(path: string, { method = 'GET', body }: Options = {}): Promise<T> {

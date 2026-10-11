@@ -1,6 +1,17 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { ApiKey, CreatedApiKey, Email, EmailStatus, Page, Usage, WebhookDelivery, WebhookEndpoint } from '@/lib/types'
+import type {
+  ApiKey,
+  CreatedApiKey,
+  Email,
+  EmailStatus,
+  EmailTemplate,
+  Page,
+  TemplatePreviewResponse,
+  Usage,
+  WebhookDelivery,
+  WebhookEndpoint,
+} from '@/lib/types'
 
 export function useApiKeys() {
   return useQuery({
@@ -150,6 +161,89 @@ export function useReplayWebhookDelivery() {
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['webhook-deliveries'] })
+    },
+  })
+}
+
+export function useTemplates() {
+  return useQuery({
+    queryKey: ['templates'],
+    queryFn: () => api<{ data: EmailTemplate[] }>('/dashboard/templates').then((r) => r.data),
+  })
+}
+
+export function useTemplate(id: string | null) {
+  return useQuery({
+    queryKey: ['templates', id],
+    queryFn: () =>
+      api<{ data: EmailTemplate; detected_variables: string[] }>(`/dashboard/templates/${id}`),
+    enabled: Boolean(id),
+  })
+}
+
+export function useCreateTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: {
+      name: string
+      slug: string
+      description?: string
+      subject: string
+      html_content: string
+      sample_vars?: Record<string, unknown>
+    }) => api<{ data: EmailTemplate }>('/dashboard/templates', { method: 'POST', body }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  })
+}
+
+export function useUpdateTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      id: string
+      name?: string
+      slug?: string
+      description?: string
+      subject?: string
+      html_content?: string
+      sample_vars?: Record<string, unknown>
+    }) => api<{ data: EmailTemplate }>(`/dashboard/templates/${id}`, { method: 'PUT', body }).then((r) => r.data),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['templates'] })
+      qc.invalidateQueries({ queryKey: ['templates', vars.id] })
+    },
+  })
+}
+
+export function useDeleteTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/dashboard/templates/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  })
+}
+
+export function usePreviewTemplate() {
+  return useMutation({
+    mutationFn: ({ id, variables }: { id: string; variables?: Record<string, unknown> }) =>
+      api<TemplatePreviewResponse>(`/dashboard/templates/${id}/preview`, { method: 'POST', body: { variables } }),
+  })
+}
+
+export function useTestSendTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, to, variables }: { id: string; to?: string; variables?: Record<string, unknown> }) =>
+      api<{ data: { id: string }[] }>(`/dashboard/templates/${id}/test-send`, {
+        method: 'POST',
+        body: { to, variables },
+      }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['emails'] })
+      qc.invalidateQueries({ queryKey: ['usage'] })
     },
   })
 }

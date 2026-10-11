@@ -87,3 +87,22 @@ export interface WebhookDelivery {
   created_at: string
   updated_at: string
 }
+
+export interface EmailTemplate {
+  id: string
+  user_id: string
+  name: string
+  slug: string
+  description?: string
+  subject: string
+  html_content: string
+  sample_vars: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TemplatePreviewResponse {
+  subject: string
+  html: string
+  detected_variables: string[]
+}
