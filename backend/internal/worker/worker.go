@@ -18,6 +18,7 @@ import (
 	"github.com/priyansh-narang2308/homing/backend/internal/mailer"
 	"github.com/priyansh-narang2308/homing/backend/internal/model"
 	"github.com/priyansh-narang2308/homing/backend/internal/queue"
+	"github.com/priyansh-narang2308/homing/backend/internal/webhook"
 )
 
 const (
@@ -173,7 +174,7 @@ func (w *Worker) handle(msg redis.XMessage) {
 	// A worker crashed during the final attempt; don't send again.
 	if email.Attempts > w.cfg.MaxAttempts {
 		w.logEvent(ctx, id, model.EventDLQMoved, email.Attempts, "Worker crashed on final attempt; moved to Dead-Letter Queue")
-		w.finish(ctx, log, msg.ID, id, model.StatusDLQ, "max attempts reached")
+		w.finish(ctx, log, msg.ID, email, model.StatusDLQ, "max attempts reached")
 		return
 	}
 
@@ -189,15 +190,15 @@ func (w *Worker) handle(msg redis.XMessage) {
 	switch {
 	case sendErr == nil:
 		w.logEvent(ctx, id, model.EventSent, email.Attempts, "250 2.0.0 OK: Accepted by mail server via SMTP/SES")
-		w.finish(ctx, log, msg.ID, id, model.StatusSent, "")
+		w.finish(ctx, log, msg.ID, email, model.StatusSent, "")
 		log.Info().Str("to", email.To).Int("attempt", email.Attempts).Msg("email sent")
 	case mailer.IsPermanent(sendErr):
 		w.logEvent(ctx, id, model.EventFailed, email.Attempts, fmt.Sprintf("Permanent rejection: %s", sendErr.Error()))
-		w.finish(ctx, log, msg.ID, id, model.StatusFailed, sendErr.Error())
+		w.finish(ctx, log, msg.ID, email, model.StatusFailed, sendErr.Error())
 		log.Error().Err(sendErr).Int("attempt", email.Attempts).Msg("email permanently failed")
 	case email.Attempts >= w.cfg.MaxAttempts:
 		w.logEvent(ctx, id, model.EventDLQMoved, email.Attempts, fmt.Sprintf("Moved to Dead-Letter Queue (DLQ) after %d attempts: %s", email.Attempts, sendErr.Error()))
-		w.finish(ctx, log, msg.ID, id, model.StatusDLQ, fmt.Sprintf("Max attempts reached: %s", sendErr.Error()))
+		w.finish(ctx, log, msg.ID, email, model.StatusDLQ, fmt.Sprintf("Max attempts reached: %s", sendErr.Error()))
 		log.Warn().Err(sendErr).Int("attempt", email.Attempts).Msg("email moved to Dead-Letter Queue")
 	default:
 		w.logEvent(ctx, id, model.EventRetryScheduled, email.Attempts, fmt.Sprintf("Temporary SMTP failure: %s (will retry in %s)", sendErr.Error(), w.cfg.RetryAfter))
@@ -269,7 +270,7 @@ func (w *Worker) handleUnclaimed(ctx context.Context, log zerolog.Logger, msgID 
 	}
 }
 
-func (w *Worker) finish(ctx context.Context, log zerolog.Logger, msgID string, id uuid.UUID, status model.EmailStatus, lastError string) {
+func (w *Worker) finish(ctx context.Context, log zerolog.Logger, msgID string, email model.Email, status model.EmailStatus, lastError string) {
 	updates := map[string]any{
 		"status":     status,
 		"last_error": lastError,
@@ -278,13 +279,22 @@ func (w *Worker) finish(ctx context.Context, log zerolog.Logger, msgID string, i
 	if status == model.StatusSent {
 		updates["sent_at"] = gorm.Expr("now()")
 	}
-	if err := w.db.WithContext(ctx).Model(&model.Email{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		// Not acking means the message is redelivered, so the email could be sent twice.
-		// That's the at-least-once trade-off; losing the status would be worse.
+	if err := w.db.WithContext(ctx).Model(&model.Email{}).Where("id = ?", email.ID).Updates(updates).Error; err != nil {
 		log.Error().Err(err).Str("status", string(status)).Msg("failed to save email status")
 		return
 	}
 	w.ack(log, msgID)
+
+	// Asynchronously dispatch webhook event to customer endpoints
+	webhook.TriggerEvent(w.db, email.UserID, "email."+string(status), map[string]any{
+		"email_id":   email.ID.String(),
+		"from":       email.From,
+		"to":         email.To,
+		"subject":    email.Subject,
+		"status":     string(status),
+		"attempts":   email.Attempts,
+		"last_error": lastError,
+	})
 }
 
 func (w *Worker) ack(log zerolog.Logger, msgID string) {

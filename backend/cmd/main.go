@@ -199,6 +199,14 @@ func runAPI(ctx context.Context, k *koanf.Koanf, db *gorm.DB, rdb *redis.Client)
 	d.POST("/api-keys", h.CreateAPIKey)
 	d.DELETE("/api-keys/:id", h.RevokeAPIKey)
 
+	// Webhooks
+	d.GET("/webhooks", h.ListWebhookEndpoints)
+	d.POST("/webhooks", h.CreateWebhookEndpoint)
+	d.DELETE("/webhooks/:id", h.DeleteWebhookEndpoint)
+	d.POST("/webhooks/:id/test", h.TestWebhookEndpoint)
+	d.GET("/webhooks/:id/deliveries", h.ListWebhookDeliveries)
+	d.POST("/webhooks/deliveries/:id/replay", h.ReplayWebhookDelivery)
+
 	addr := ":" + k.String("PORT")
 	log.Info().Str("addr", addr).Msg("starting API server")
 	return echo.StartConfig{Address: addr, HideBanner: true, HidePort: true}.Start(ctx, e)

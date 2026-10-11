@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { ApiKey, CreatedApiKey, Email, EmailStatus, Page, Usage } from '@/lib/types'
+import type { ApiKey, CreatedApiKey, Email, EmailStatus, Page, Usage, WebhookDelivery, WebhookEndpoint } from '@/lib/types'
 
 export function useApiKeys() {
   return useQuery({
@@ -92,6 +92,64 @@ export function useRetryEmail() {
     onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: ['emails'] })
       qc.invalidateQueries({ queryKey: ['email-events', id] })
+    },
+  })
+}
+
+export function useWebhooks() {
+  return useQuery({
+    queryKey: ['webhooks'],
+    queryFn: () => api<{ data: WebhookEndpoint[] }>('/dashboard/webhooks').then((r) => r.data),
+  })
+}
+
+export function useCreateWebhook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { url: string; description?: string; events?: string }) =>
+      api<WebhookEndpoint>('/dashboard/webhooks', { method: 'POST', body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['webhooks'] }),
+  })
+}
+
+export function useDeleteWebhook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/dashboard/webhooks/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['webhooks'] }),
+  })
+}
+
+export function useTestWebhook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<{ data: WebhookDelivery }>(`/dashboard/webhooks/${id}/test`, { method: 'POST' }).then((r) => r.data),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['webhook-deliveries', id] })
+    },
+  })
+}
+
+export function useWebhookDeliveries(endpointId: string | null) {
+  return useQuery({
+    queryKey: ['webhook-deliveries', endpointId],
+    queryFn: () =>
+      api<{ data: WebhookDelivery[] }>(`/dashboard/webhooks/${endpointId}/deliveries`).then((r) => r.data),
+    enabled: Boolean(endpointId),
+    refetchInterval: 5_000,
+  })
+}
+
+export function useReplayWebhookDelivery() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (deliveryId: string) =>
+      api<{ data: WebhookDelivery }>(`/dashboard/webhooks/deliveries/${deliveryId}/replay`, { method: 'POST' }).then(
+        (r) => r.data,
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['webhook-deliveries'] })
     },
   })
 }

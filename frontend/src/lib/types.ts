@@ -58,3 +58,32 @@ export interface Page<T> {
   data: T[]
   next_cursor: string | null
 }
+
+export type WebhookDeliveryStatus = 'pending' | 'delivered' | 'failed'
+
+export interface WebhookEndpoint {
+  id: string
+  user_id: string
+  url: string
+  description?: string
+  secret: string
+  events: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface WebhookDelivery {
+  id: string
+  endpoint_id: string
+  user_id: string
+  event_type: string
+  payload: string
+  response_code: number
+  response_body: string
+  error?: string
+  latency_ms: number
+  status: WebhookDeliveryStatus
+  created_at: string
+  updated_at: string
+}

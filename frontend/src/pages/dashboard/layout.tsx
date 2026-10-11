@@ -1,6 +1,15 @@
-import { NavLink, Outlet, useNavigate } from 'react-router'
-import { ChevronsUpDown, ExternalLink, Gauge, KeyRound, LogOut, Mail, Rocket } from 'lucide-react'
-import { Logo } from '@/components/logo'
+import { NavLink, Outlet, useNavigate } from "react-router";
+import {
+  ChevronsUpDown,
+  ExternalLink,
+  Gauge,
+  KeyRound,
+  LogOut,
+  Mail,
+  Rocket,
+  Webhook,
+} from "lucide-react";
+import { Logo } from "@/components/logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,30 +17,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useSession, useSignOut } from '@/hooks/use-session'
-import { cn } from '@/lib/utils'
+} from "@/components/ui/dropdown-menu";
+import { useSession, useSignOut } from "@/hooks/use-session";
+import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: '/dashboard', label: 'Get started', icon: Rocket },
-  { to: '/emails', label: 'Emails', icon: Mail },
-  { to: '/api-keys', label: 'API keys', icon: KeyRound },
-  { to: '/usage', label: 'Usage', icon: Gauge },
-]
+  { to: "/dashboard", label: "Get started", icon: Rocket },
+  { to: "/emails", label: "Emails", icon: Mail },
+  { to: "/webhooks", label: "Webhooks", icon: Webhook },
+  { to: "/api-keys", label: "API keys", icon: KeyRound },
+  { to: "/usage", label: "Usage", icon: Gauge },
+];
 
 // Local development only; production mail goes through SES.
-const MAILPIT_URL = 'http://localhost:8025'
+const MAILPIT_URL = "http://localhost:8025";
 
 export function DashboardLayout() {
-  const { data: session } = useSession()
-  const signOut = useSignOut()
-  const navigate = useNavigate()
-  const user = session?.user
-  const initial = (user?.name || user?.email || '?').charAt(0).toUpperCase()
+  const { data: session } = useSession();
+  const signOut = useSignOut();
+  const navigate = useNavigate();
+  const user = session?.user;
+  const initial = (user?.name || user?.email || "?").charAt(0).toUpperCase();
 
   async function onSignOut() {
-    await signOut()
-    navigate('/login', { replace: true })
+    await signOut();
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -46,11 +56,15 @@ export function DashboardLayout() {
                 {initial}
               </span>
             )}
-            <span className="flex-1 truncate text-sm font-medium text-cf-fg-strong">{user?.name || user?.email}</span>
+            <span className="flex-1 truncate text-sm font-medium text-cf-fg-strong">
+              {user?.name || user?.email}
+            </span>
             <ChevronsUpDown className="size-4 text-cf-fg-muted" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel className="truncate font-normal text-cf-fg-muted">{user?.email}</DropdownMenuLabel>
+            <DropdownMenuLabel className="truncate font-normal text-cf-fg-muted">
+              {user?.email}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onSignOut}>
               <LogOut /> Sign out
@@ -65,10 +79,10 @@ export function DashboardLayout() {
               to={to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors',
+                  "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
                   isActive
-                    ? 'bg-accent font-medium text-cf-fg-strong'
-                    : 'text-cf-fg-muted hover:bg-accent/60 hover:text-cf-fg-strong',
+                    ? "bg-accent font-medium text-cf-fg-strong"
+                    : "text-cf-fg-muted hover:bg-accent/60 hover:text-cf-fg-strong",
                 )
               }
             >
@@ -89,7 +103,10 @@ export function DashboardLayout() {
               <ExternalLink className="size-3.5" /> Mailpit inbox
             </a>
           )}
-          <NavLink to="/" className="opacity-80 transition-opacity hover:opacity-100">
+          <NavLink
+            to="/"
+            className="opacity-80 transition-opacity hover:opacity-100"
+          >
             <Logo className="[&_span]:text-sm" />
           </NavLink>
         </div>
@@ -101,5 +118,5 @@ export function DashboardLayout() {
         </div>
       </main>
     </div>
-  )
+  );
 }
